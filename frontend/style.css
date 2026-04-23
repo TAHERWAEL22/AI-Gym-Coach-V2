@@ -42,7 +42,9 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  width: 100%; height: 100%;
+  width: 100%;
+  /* 100dvh collapses correctly when the mobile browser address bar hides */
+  height: 100dvh;
   background: var(--bg-black);
   color: var(--text-primary);
   font-family: 'Outfit', sans-serif;
@@ -64,7 +66,8 @@ html, body {
 #app {
   position: relative;
   z-index: 1;
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -251,6 +254,8 @@ html, body {
   border: none;
   border-radius: var(--radius-md);
   padding: 16px;
+  /* 44px min-height: Apple HIG thumb-friendly tap target */
+  min-height: 44px;
   color: #fff;
   font-family: 'Outfit', sans-serif;
   font-size: 16px;
@@ -292,7 +297,8 @@ html, body {
    ══════════════════════════════════════════════════════════════════ */
 
 #chat-screen {
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100dvh;
   display: none;
   flex-direction: column;
   max-width: 1100px;
@@ -500,16 +506,27 @@ html, body {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 20px;
   scroll-behavior: smooth;
+  /* Momentum scrolling on iOS — makes it feel native */
+  -webkit-overflow-scrolling: touch;
 }
 
-.chat-messages::-webkit-scrollbar { width: 4px; }
+/* Ultra-slim, modern scrollbar — hidden on touch, visible on desktop hover */
+.chat-messages::-webkit-scrollbar { width: 3px; }
 .chat-messages::-webkit-scrollbar-track { background: transparent; }
-.chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+.chat-messages::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+@media (hover: none) {
+  /* Hide scrollbar entirely on pure touch devices */
+  .chat-messages::-webkit-scrollbar { width: 0; }
+}
 
 /* Welcome Banner */
 .welcome-banner {
@@ -702,6 +719,8 @@ html, body {
 /* ── Input Area ─────────────────────────────────────────────────── */
 .chat-input-area {
   padding: 16px 28px 20px;
+  /* env() keeps input above the home indicator on iPhone X+ */
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
   background: rgba(8,9,10,0.8);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
@@ -731,7 +750,8 @@ html, body {
   outline: none;
   color: var(--text-primary);
   font-family: 'Outfit', sans-serif;
-  font-size: 15px;
+  /* 16px prevents iOS Safari from auto-zooming when the input is focused */
+  font-size: 16px;
   line-height: 1.5;
   resize: none;
   min-height: 24px;
@@ -744,7 +764,9 @@ html, body {
 #chat-input::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 
 #send-btn {
-  width: 40px; height: 40px;
+  /* 44px: Apple HIG minimum thumb-friendly target */
+  width: 44px; height: 44px;
+  min-height: 44px;
   background: linear-gradient(135deg, var(--orange), #E8530A);
   border: none;
   border-radius: 12px;
@@ -883,10 +905,13 @@ html, body {
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .chat-messages { padding: 16px; }
-  .chat-input-area { padding: 12px 16px 16px; }
+  .chat-input-area {
+    padding: 12px 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  }
   .onboarding-card { padding: 32px 24px; }
   .form-grid { grid-template-columns: 1fr; }
-  #chat-screen { max-width: 100%; }
+  #chat-screen { max-width: 100%; height: 100dvh; }
 }
 
 @media (max-width: 600px) {
@@ -984,16 +1009,18 @@ html, body {
   }
 
   .chat-input-area {
-    padding: 10px 12px 14px;
+    padding: 10px 12px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
     flex-shrink: 0;
   }
 
   .input-wrapper { padding: 10px 12px; gap: 10px; }
 
-  /* font-size 16px prevents iOS Safari from auto-zooming on input focus */
+  /* 16px prevents iOS Safari from auto-zooming on input focus */
   #chat-input { font-size: 16px; }
 
-  #send-btn { width: 36px; height: 36px; }
+  /* Keep 44px min touch target even on small screens */
+  #send-btn { width: 44px; height: 44px; min-height: 44px; }
 
   .input-hint { font-size: 10px; }
 
@@ -1049,9 +1076,13 @@ html, body {
   .form-input,
   #chat-input { font-size: 16px !important; }
 
-  .chat-input-area { padding: 8px 10px 12px; }
+  .chat-input-area {
+    padding: 8px 10px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  }
   .input-wrapper   { padding: 8px 10px; gap: 8px; }
-  #send-btn        { width: 34px; height: 34px; }
+  /* Never drop below 44×44 thumb target */
+  #send-btn        { width: 44px; height: 44px; min-height: 44px; }
 
   .input-hint { display: none; } /* reclaim vertical space on tiny screens */
 
