@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AI Gym Coach — ARIA | Your Personal AI Fitness Coach</title>
+  <meta name="description" content="ARIA — your AI-powered personal gym coach. Get personalized workout plans, meal plans, and real-time fitness guidance powered by Google Gemini." />
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+  <!-- marked.js for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    /* Tailwind dark mode base */
+    .dark { color-scheme: dark; }
+  </style>
+</head>
+<body class="dark">
+
+<!-- ── Three.js Background Canvas ──────────────────────────────── -->
+<canvas id="three-canvas"></canvas>
+
+<!-- ── App Root ─────────────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- ════════════════════════════════════════════════════════════
+       ONBOARDING SCREEN
+       ════════════════════════════════════════════════════════════ -->
+  <div id="onboarding-screen">
+    <div class="onboarding-card">
+
+      <!-- Brand -->
+      <div class="brand-logo">
+        <div class="logo-icon">🏋️</div>
+        <div class="brand-name">AI GYM <span>COACH</span></div>
+      </div>
+
+      <h1 class="onboarding-title">
+        Meet <span>ARIA</span> —<br/>Your AI Coach
+      </h1>
+      <p class="onboarding-sub">
+        Let's build your athlete profile so ARIA can personalize every workout and meal plan just for you.
+      </p>
+
+      <!-- Form -->
+      <form id="onboarding-form" novalidate>
+
+        <!-- Name -->
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="input-name">Your Name</label>
+          <input class="form-input" id="input-name" type="text"
+                 placeholder="e.g. Alex Jordan" autocomplete="given-name" required />
+        </div>
+
+        <div class="form-grid">
+          <!-- Age -->
+          <div class="form-group">
+            <label class="form-label" for="input-age">Age (yrs)</label>
+            <input class="form-input" id="input-age" type="number"
+                   placeholder="25" min="13" max="100" required />
+          </div>
+
+          <!-- Weight -->
+          <div class="form-group">
+            <label class="form-label" for="input-weight">Weight (kg)</label>
+            <input class="form-input" id="input-weight" type="number"
+                   placeholder="75" min="30" max="300" step="0.1" required />
+          </div>
+
+          <!-- Height -->
+          <div class="form-group full">
+            <label class="form-label" for="input-height">Height (cm)</label>
+            <input class="form-input" id="input-height" type="number"
+                   placeholder="175" min="100" max="250" required />
+          </div>
+        </div>
+
+        <!-- Goal Selector -->
+        <div class="form-group" style="margin-top:4px;">
+          <label class="form-label">Your Goal</label>
+          <div class="goal-selector" id="goal-selector">
+            <button type="button" class="goal-btn" data-goal="bulk">
+              <div class="goal-icon">💪</div>
+              <div class="goal-label">BULK</div>
+              <div class="goal-sub">Gain Mass</div>
+            </button>
+            <button type="button" class="goal-btn" data-goal="cut">
+              <div class="goal-icon">🔥</div>
+              <div class="goal-label">CUT</div>
+              <div class="goal-sub">Lose Fat</div>
+            </button>
+            <button type="button" class="goal-btn active" data-goal="fit">
+              <div class="goal-icon">⚡</div>
+              <div class="goal-label">FIT</div>
+              <div class="goal-sub">Stay Fit</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-primary" id="onboarding-submit">
+          <span id="submit-icon">🚀</span>
+          <span id="submit-text">Activate ARIA</span>
+        </button>
+
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════════════
+       MAIN CHAT SCREEN
+       ════════════════════════════════════════════════════════════ -->
+  <div id="chat-screen">
+
+    <!-- Header -->
+    <header class="chat-header">
+      <div class="header-brand">
+        <div class="header-logo">🏋️</div>
+        <div>
+          <div class="header-title">AI GYM <span>COACH</span></div>
+          <div class="aria-status">
+            <div class="status-dot"></div>
+            <span>ARIA is online &amp; ready</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="profile-chip" id="edit-profile-btn">
+          <i data-lucide="user" style="width:14px;height:14px;"></i>
+          <span id="header-profile-name">Athlete</span>
+        </div>
+        <button class="icon-btn" id="clear-chat-btn" title="Clear chat history">
+          <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <div class="chat-body">
+
+      <!-- ── Sidebar ─────────────────────────────────────────── -->
+      <aside class="sidebar">
+
+        <!-- Stats -->
+        <div>
+          <div class="sidebar-section-label">Athlete Profile</div>
+          <div class="stats-card" id="stats-card">
+            <div class="stat-row">
+              <span class="stat-key">Name</span>
+              <span class="stat-val" id="stat-name">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Age</span>
+              <span class="stat-val" id="stat-age">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Weight</span>
+              <span class="stat-val orange" id="stat-weight">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Height</span>
+              <span class="stat-val" id="stat-height">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Goal</span>
+              <span class="stat-val neon" id="stat-goal">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Prompts -->
+        <div>
+          <div class="sidebar-section-label">Quick Actions</div>
+          <div class="quick-prompts">
+            <div class="quick-chip" data-prompt="Give me a full weekly workout plan based on my profile.">
+              <span class="chip-icon">📋</span> Weekly Workout Plan
+            </div>
+            <div class="quick-chip" data-prompt="Create a personalized 7-day meal plan that fits my goal.">
+              <span class="chip-icon">🥗</span> 7-Day Meal Plan
+            </div>
+            <div class="quick-chip" data-prompt="What are the best supplements for my goal?">
+              <span class="chip-icon">💊</span> Supplement Guide
+            </div>
+            <div class="quick-chip" data-prompt="Give me a high-intensity cardio routine I can do at the gym.">
+              <span class="chip-icon">🏃</span> Cardio Routine
+            </div>
+            <div class="quick-chip" data-prompt="How many calories should I eat per day based on my stats?">
+              <span class="chip-icon">🔢</span> Calorie Calculator
+            </div>
+            <div class="quick-chip" data-prompt="What are the gym hours?">
+              <span class="chip-icon">🕐</span> Gym Hours
+            </div>
+          </div>
+        </div>
+
+        <!-- Gym Hours -->
+        <div>
+          <div class="sidebar-section-label">Gym Hours</div>
+          <div class="gym-hours-banner">
+            <div class="hours-label">⚡ Open Daily</div>
+            <div class="hours-time">10AM – 11PM</div>
+            <div class="hours-sub">7 days a week</div>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ── Chat Main ──────────────────────────────────────── -->
+      <main class="chat-main">
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chat-messages">
+          <div class="welcome-banner" id="welcome-banner">
+            <div class="welcome-orb">🤖</div>
+            <div class="welcome-heading">
+              Hey <span id="welcome-name">Champ</span>, I'm ARIA!
+            </div>
+            <p class="welcome-text">
+              Your AI-powered personal gym coach. Ask me anything — workout plans,
+              meal prep, supplements, or just some motivation. Let's get to work! 💪
+            </p>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-area">
+          <div class="input-wrapper">
+            <textarea
+              id="chat-input"
+              placeholder="Ask ARIA anything... e.g. 'Give me a chest workout plan'"
+              rows="1"
+            ></textarea>
+            <button id="send-btn" title="Send message">
+              <i data-lucide="send" style="width:18px;height:18px;"></i>
+            </button>
+          </div>
+          <p class="input-hint">
+            Press <kbd style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-size:10px;">Enter</kbd>
+            to send &nbsp;·&nbsp;
+            <kbd style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-size:10px;">Shift+Enter</kbd>
+            for new line
+          </p>
+        </div>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════
+     EDIT PROFILE MODAL
+     ════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-title">✏️ Update Profile</div>
+    <button class="modal-close" id="modal-close">✕</button>
+
+    <form id="edit-profile-form">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label" for="edit-name">Name</label>
+        <input class="form-input" id="edit-name" type="text" />
+      </div>
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label" for="edit-age">Age</label>
+          <input class="form-input" id="edit-age" type="number" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-weight">Weight (kg)</label>
+          <input class="form-input" id="edit-weight" type="number" step="0.1" />
+        </div>
+        <div class="form-group full">
+          <label class="form-label" for="edit-height">Height (cm)</label>
+          <input class="form-input" id="edit-height" type="number" />
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">Goal</label>
+        <div class="goal-selector" id="edit-goal-selector">
+          <button type="button" class="goal-btn" data-goal="bulk">
+            <div class="goal-icon">💪</div><div class="goal-label">BULK</div>
+          </button>
+          <button type="button" class="goal-btn" data-goal="cut">
+            <div class="goal-icon">🔥</div><div class="goal-label">CUT</div>
+          </button>
+          <button type="button" class="goal-btn" data-goal="fit">
+            <div class="goal-icon">⚡</div><div class="goal-label">FIT</div>
+          </button>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary">
+        💾 Save Changes
+      </button>
+    </form>
+  </div>
+</div>
+
+
+<!-- ── Toast ──────────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── App JS ──────────────────────────────────────────────────────── -->
+<script src="app.js"></script>
+
+</body>
+</html>
